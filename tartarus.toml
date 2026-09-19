@@ -1,0 +1,11 @@
+rootfs = "rootfs/alpine"
+command = ["/bin/sh"]
+hostname = "tartarus"
+
+[limits]
+memory = "64M"
+cpus = 0.5
+pids = 32
+
+[seccomp]
+blocked = ["mount", "reboot", "unshare"]
