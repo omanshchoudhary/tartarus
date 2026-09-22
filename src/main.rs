@@ -10,6 +10,6 @@ fn main() -> anyhow::Result<()> {
     let path = &args[1];
     let cfg = config::Config::load(path)?;
 
-    container::run(&cfg)?;
-    Ok(())
+    let code = container::run(&cfg)?;
+    std::process::exit(code);
 }
