@@ -1,3 +1,4 @@
+use crate::cgroup::Cgroup;
 use crate::config::Config;
 use nix::sched::{CloneFlags, clone};
 use nix::sys::signal::{SigHandler, Signal, signal};
@@ -11,6 +12,9 @@ use std::io::{Read, Write};
 const STACK_SIZE: usize = 1024 * 1024;
 
 pub fn run(cfg: &Config) -> anyhow::Result<i32> {
+    // limits are written before the container exists, so they apply from its first instruction
+    let cgroup = Cgroup::create(&cfg.limits)?;
+
     // pipe for child and parent synchronization
     let (mut reader, mut writer) = std::io::pipe()?;
 
@@ -64,6 +68,8 @@ pub fn run(cfg: &Config) -> anyhow::Result<i32> {
     let mut gid_map_file = File::create(format!("/proc/{}/gid_map", child_pid))?;
     gid_map_file.write_all(format!("0 {} 1\n", gid).as_bytes())?;
 
+    cgroup.add_process(child_pid)?;
+
     // send "go" signal byte to unblock child
     writer.write_all(b"g")?;
     drop(writer);
@@ -74,6 +80,8 @@ pub fn run(cfg: &Config) -> anyhow::Result<i32> {
         WaitStatus::Signaled(_, sig, _) => 128 + (sig as i32),
         _ => 1
     };
+
+    cgroup.cleanup()?;
 
     Ok(exit_code)
 }

@@ -1,6 +1,7 @@
 mod config;
 mod container;
 mod rootfs;
+mod cgroup;
 
 fn main() -> anyhow::Result<()> {
     let args = std::env::args().skip(1).collect::<Vec<String>>();
