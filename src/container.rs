@@ -117,6 +117,7 @@ pub fn child_main(cfg: &Config, reader: &mut std::io::PipeReader) -> anyhow::Res
         .map(|e| CString::new(e))
         .collect::<Result<Vec<CString>, _>>()?;
     crate::rootfs::setup(&cfg.rootfs)?;
+    crate::seccomp::apply(&cfg.seccomp.blocked)?;
     nix::unistd::execve(&args[0], &args, &env)?;
     Ok(())
 }
