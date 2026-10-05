@@ -1,0 +1,11 @@
+rootfs = "rootfs/alpine"
+command = ["/bin/sh", "-c", "grep Seccomp /proc/self/status; grep CapEff /proc/self/status; echo '--- blocked'; mkdir /tmp/x; echo '--- allowed'; touch /tmp/x && echo 'touch worked'"]
+hostname = "tartarus"
+
+[limits]
+memory = "64M"
+cpus = 0.5
+pids = 32
+
+[seccomp]
+blocked = ["mount", "reboot", "unshare", "mkdir"]

@@ -1,0 +1,11 @@
+rootfs = "rootfs/alpine"
+command = ["/bin/sh", "-c", "i=0; while [ $i -lt 200 ]; do sleep 5 & i=$((i+1)); done; echo survived"]
+hostname = "tartarus"
+
+[limits]
+memory = "64M"
+cpus = 0.5
+pids = 32
+
+[seccomp]
+blocked = ["mount", "reboot", "unshare"]
