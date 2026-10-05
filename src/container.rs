@@ -30,7 +30,7 @@ pub fn run(cfg: &Config) -> anyhow::Result<i32> {
 
     // spawn child
     let clone_flags =
-        CloneFlags::CLONE_NEWUSER | CloneFlags::CLONE_NEWUTS | CloneFlags::CLONE_NEWPID;
+        CloneFlags::CLONE_NEWUSER | CloneFlags::CLONE_NEWUTS | CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNS;
 
     let pid = unsafe {
         clone(
@@ -108,7 +108,7 @@ pub fn child_main(cfg: &Config, reader: &mut std::io::PipeReader) -> anyhow::Res
         .into_iter()
         .map(|e| CString::new(e))
         .collect::<Result<Vec<CString>, _>>()?;
-
+    crate::rootfs::setup(&cfg.rootfs)?;
     nix::unistd::execve(&args[0], &args, &env)?;
     Ok(())
 }
