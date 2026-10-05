@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0.104"
+caps = "0.5.6"
+libseccomp = "0.4.0"
 nix = { version = "0.31.3", features = ["sched", "hostname", "signal", "process", "user", "mount", "fs"] }
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.6"
