@@ -74,8 +74,19 @@ Unknown keys are rejected, so a typo fails loudly instead of being ignored silen
 | `src/rootfs.rs` | Mount propagation, `pivot_root`, `/proc`, `/dev` and `/tmp` |
 | `src/cgroup.rs` | cgroup v2 creation, limits and cleanup |
 | `src/seccomp.rs` | `no_new_privs`, capability dropping and the seccomp filter |
+| `tests/integration.rs` | Integration tests, one per isolation mechanism |
 | `demos/` | Ready to run configurations, one per mechanism |
 | `docs/` | AppArmor profile template |
+
+## Tests
+
+```sh
+cargo test
+```
+
+Eleven integration tests run the real binary and check what actually happened: exit status propagation, PID 1 inside its own namespace, the Alpine rootfs with the host unreachable, the hostname, the process and memory limits, blocked system calls alongside allowed ones, an empty network namespace, cgroup removal, and both config validation failures.
+
+They need the same environment the runtime does, a systemd user session with the cpu, memory and pids controllers delegated plus the AppArmor profile installed, so CI runs formatting, clippy and the build on every push and leaves the integration tests to be run on a machine that has them.
 
 ## Demonstrations
 
