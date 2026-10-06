@@ -84,8 +84,6 @@ pub fn run(cfg: &Config) -> anyhow::Result<i32> {
         _ => 1,
     };
 
-    cgroup.cleanup()?;
-
     Ok(exit_code)
 }
 

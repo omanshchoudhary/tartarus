@@ -1,4 +1,5 @@
 use crate::config::Limits;
+use anyhow::Context;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -35,36 +36,58 @@ impl Cgroup {
         let folder_name = format!("tartarus-{}", std::process::id());
         let cgroup_path = base_path.join(folder_name);
 
-        fs::create_dir_all(&cgroup_path)?;
-
-        Self::write_file(&cgroup_path.join("memory.max"), &limits.memory)?;
-        // without this the limit leaks: pages the container exceeds with are pushed to host swap
-        let swap_max = cgroup_path.join("memory.swap.max");
-        if swap_max.exists() {
-            Self::write_file(&swap_max, "0")?;
+        // pids are recycled, so a group left by a killed run could carry stale limits into this one
+        if cgroup_path.exists() {
+            fs::remove_dir(&cgroup_path).with_context(|| {
+                format!("stale cgroup in the way: {}", cgroup_path.display())
+            })?;
         }
-        Self::write_file(&cgroup_path.join("pids.max"), &limits.pids.to_string())?;
-        let quota = (limits.cpus * 100_000.0) as u64;
-        let cpu_limit_str = format!("{} 100000", quota);
-        Self::write_file(&cgroup_path.join("cpu.max"), &cpu_limit_str)?;
+        fs::create_dir(&cgroup_path)
+            .with_context(|| format!("create cgroup {}", cgroup_path.display()))?;
 
-        Ok(Self { path: cgroup_path })
+        let cgroup = Self { path: cgroup_path };
+
+        cgroup.write_limit("memory.max", &limits.memory)?;
+        // without this the limit leaks: pages the container exceeds with are pushed to host swap
+        if cgroup.path.join("memory.swap.max").exists() {
+            cgroup.write_limit("memory.swap.max", "0")?;
+        }
+        cgroup.write_limit("pids.max", &limits.pids.to_string())?;
+        let quota = (limits.cpus * 100_000.0) as u64;
+        cgroup.write_limit("cpu.max", &format!("{} 100000", quota))?;
+
+        Ok(cgroup)
     }
 
     pub fn add_process(&self, pid: i32) -> anyhow::Result<()> {
-        Self::write_file(&self.path.join("cgroup.procs"), &pid.to_string())
+        self.write_limit("cgroup.procs", &pid.to_string())
     }
 
-    pub fn cleanup(self) -> anyhow::Result<()> {
-        if self.path.exists() {
-            fs::remove_dir(&self.path)?;
-        }
-        Ok(())
+    fn write_limit(&self, file: &str, content: &str) -> anyhow::Result<()> {
+        let path = self.path.join(file);
+        Self::write_file(&path, content)
+            .with_context(|| format!("writing \"{}\" to {}", content, path.display()))
     }
 
     fn write_file(path: &Path, content: &str) -> anyhow::Result<()> {
         let mut file = File::create(path)?;
         file.write_all(content.as_bytes())?;
         Ok(())
+    }
+}
+
+// removing the group is tied to the value, so every early return and panic cleans up too
+impl Drop for Cgroup {
+    fn drop(&mut self) {
+        if !self.path.exists() {
+            return;
+        }
+        if let Err(err) = fs::remove_dir(&self.path) {
+            eprintln!(
+                "[Warning] could not remove cgroup {}: {}",
+                self.path.display(),
+                err
+            );
+        }
     }
 }
