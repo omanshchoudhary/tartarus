@@ -6,7 +6,7 @@ Closer to runc than to Docker: no images, registries or daemons, just the isolat
 
 ## What it does
 
-- Starts the command in new user, mount, PID and UTS namespaces
+- Starts the command in new user, mount, PID, UTS and network namespaces
 - Maps your UID and GID to root inside, so no sudo is needed anywhere
 - Pivots into an Alpine rootfs with a fresh `/proc`, a tmpfs `/dev` carrying the usual device nodes, and a tmpfs `/tmp`
 - Applies `memory.max`, `memory.swap.max`, `cpu.max` and `pids.max` before the command starts
@@ -119,6 +119,14 @@ The kernel kills the process when it passes `memory.max`, and the runtime exits 
 ```
 
 `Seccomp: 2` and `CapEff: 0000000000000000`, with `mkdir` denied by the filter while `touch` in the same directory still works.
+
+**Network isolation**
+
+```sh
+./target/debug/tartarus run demos/network.toml
+```
+
+Loopback is the only interface and it is down, the routing table is empty, and outbound connections fail with "Network unreachable" while the host keeps its own connectivity.
 
 ## How it works
 

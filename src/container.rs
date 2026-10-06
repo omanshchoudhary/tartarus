@@ -33,8 +33,11 @@ pub fn run(cfg: &Config) -> anyhow::Result<i32> {
     });
 
     // spawn child
-    let clone_flags =
-        CloneFlags::CLONE_NEWUSER | CloneFlags::CLONE_NEWUTS | CloneFlags::CLONE_NEWPID | CloneFlags::CLONE_NEWNS;
+    let clone_flags = CloneFlags::CLONE_NEWUSER
+        | CloneFlags::CLONE_NEWUTS
+        | CloneFlags::CLONE_NEWPID
+        | CloneFlags::CLONE_NEWNS
+        | CloneFlags::CLONE_NEWNET;
 
     let pid = unsafe {
         clone(

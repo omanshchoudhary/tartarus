@@ -1,0 +1,11 @@
+rootfs = "rootfs/alpine"
+command = ["/bin/sh", "-c", "echo '--- interfaces'; ip addr; echo '--- routes'; ip route; echo '--- outbound'; wget -T 2 -q -O - http://1.1.1.1 || echo 'no route to anywhere'"]
+hostname = "tartarus"
+
+[limits]
+memory = "64M"
+cpus = 0.5
+pids = 32
+
+[seccomp]
+blocked = ["mount", "reboot", "unshare"]
