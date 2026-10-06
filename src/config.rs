@@ -17,7 +17,7 @@ pub struct Seccomp {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
-    pub rootfs: String, 
+    pub rootfs: String,
     pub command: Vec<String>,
     pub hostname: String,
     pub limits: Limits,

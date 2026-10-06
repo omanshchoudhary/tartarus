@@ -128,6 +128,17 @@ The kernel kills the process when it passes `memory.max`, and the runtime exits 
 
 Loopback is the only interface and it is down, the routing table is empty, and outbound connections fail with "Network unreachable" while the host keeps its own connectivity.
 
+## Startup cost
+
+The runtime is a thin layer over system calls, with no daemon and no image handling, so starting a container is close to the cost of `clone` plus `execve`. Measured on one machine, 20 runs each, running `/bin/true` in Alpine:
+
+| | Median |
+| --- | --- |
+| `tartarus run` | 2.6 ms |
+| `docker run alpine true` | 226 ms |
+
+Docker is doing considerably more: a round trip to its daemon, image layer setup and network configuration. The gap is the cost of those layers, not a defect.
+
 ## How it works
 
 The parent stays on the host and the child becomes the container, because each side can do things the other cannot.

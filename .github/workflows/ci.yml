@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Install libseccomp
+        run: sudo apt-get update && sudo apt-get install -y libseccomp-dev
+      - name: Format
+        run: cargo fmt --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --release
+
+  # The integration tests need a systemd user session with cpu, memory and pids
+  # delegated, and an AppArmor profile granting userns to the binary. Hosted
+  # runners provide neither, so they are run manually rather than on every push.
+  integration:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Fetch the Alpine rootfs
+        run: |
+          mkdir -p rootfs/alpine
+          curl -LsS https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/alpine-minirootfs-3.24.2-x86_64.tar.gz \
+            | tar -xz -C rootfs/alpine
+      - name: Test
+        run: cargo test

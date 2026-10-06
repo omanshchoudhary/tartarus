@@ -1,7 +1,7 @@
+mod cgroup;
 mod config;
 mod container;
 mod rootfs;
-mod cgroup;
 mod seccomp;
 
 fn main() -> anyhow::Result<()> {

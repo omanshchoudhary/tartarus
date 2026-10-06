@@ -81,7 +81,7 @@ pub fn run(cfg: &Config) -> anyhow::Result<i32> {
     let exit_code = match waitpid(pid, None)? {
         WaitStatus::Exited(_, code) => code,
         WaitStatus::Signaled(_, sig, _) => 128 + (sig as i32),
-        _ => 1
+        _ => 1,
     };
 
     cgroup.cleanup()?;

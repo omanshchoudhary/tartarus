@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
 const BIN: &str = env!("CARGO_BIN_EXE_tartarus");
@@ -9,7 +9,11 @@ fn rootfs() -> String {
 }
 
 fn write_config(name: &str, body: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(format!("tartarus-test-{}-{}.toml", name, std::process::id()));
+    let path = std::env::temp_dir().join(format!(
+        "tartarus-test-{}-{}.toml",
+        name,
+        std::process::id()
+    ));
     fs::write(&path, body).expect("write config");
     path
 }
@@ -39,7 +43,7 @@ blocked = [{}]
     )
 }
 
-fn run(config: &PathBuf) -> Output {
+fn run(config: &Path) -> Output {
     Command::new(BIN)
         .args(["run", config.to_str().unwrap()])
         .output()
@@ -94,13 +98,7 @@ fn rootfs_is_alpine_and_the_host_is_unreachable() {
 
 #[test]
 fn hostname_is_set_inside_the_uts_namespace() {
-    let cfg = config(
-        "uts",
-        r#"["/bin/hostname"]"#,
-        "64M",
-        32,
-        r#""reboot""#,
-    );
+    let cfg = config("uts", r#"["/bin/hostname"]"#, "64M", 32, r#""reboot""#);
     let text = stdout(&run(&cfg));
     assert_eq!(text.trim(), "testbox");
     let host = Command::new("hostname").output().expect("host hostname");
@@ -118,7 +116,10 @@ fn process_count_is_capped_by_pids_max() {
     );
     let out = run(&cfg);
     let text = format!("{}{}", stdout(&out), String::from_utf8_lossy(&out.stderr));
-    assert!(text.contains("can't fork"), "fork was never refused: {text}");
+    assert!(
+        text.contains("can't fork"),
+        "fork was never refused: {text}"
+    );
     assert!(!text.contains("survived"), "the loop completed: {text}");
 }
 
@@ -145,7 +146,10 @@ fn blocked_syscalls_fail_while_others_still_work() {
         r#""mkdir", "reboot""#,
     );
     let text = stdout(&run(&cfg));
-    assert!(text.contains("touch-worked"), "touch should still work: {text}");
+    assert!(
+        text.contains("touch-worked"),
+        "touch should still work: {text}"
+    );
     assert!(text.contains("Seccomp:\t2"), "no filter loaded: {text}");
     assert!(
         text.contains("CapEff:\t0000000000000000"),
@@ -164,8 +168,16 @@ fn network_namespace_has_nothing_but_loopback() {
     );
     let text = stdout(&run(&cfg));
     let mut lines = text.lines();
-    assert_eq!(lines.next().unwrap().trim(), "0", "routing table is not empty: {text}");
-    assert_eq!(lines.next().unwrap().trim(), "1", "more than loopback exists: {text}");
+    assert_eq!(
+        lines.next().unwrap().trim(),
+        "0",
+        "routing table is not empty: {text}"
+    );
+    assert_eq!(
+        lines.next().unwrap().trim(),
+        "1",
+        "more than loopback exists: {text}"
+    );
 }
 
 #[test]
@@ -224,5 +236,8 @@ fn empty_command_is_rejected() {
     let out = run(&cfg);
     assert!(!out.status.success());
     let text = String::from_utf8_lossy(&out.stderr).to_string();
-    assert!(text.contains("command must not be empty"), "unexpected error: {text}");
+    assert!(
+        text.contains("command must not be empty"),
+        "unexpected error: {text}"
+    );
 }

@@ -5,11 +5,12 @@ use nix::unistd::{chdir, pivot_root};
 const NONE: Option<&str> = None;
 
 pub fn setup(rootfs: &str) -> anyhow::Result<()> {
-    let root = std::fs::canonicalize(rootfs)
-        .with_context(|| format!("rootfs not found: {}", rootfs))?;
+    let root =
+        std::fs::canonicalize(rootfs).with_context(|| format!("rootfs not found: {}", rootfs))?;
 
     // avoid private mounts propagate to host
-    mount(NONE, "/", NONE, MsFlags::MS_REC | MsFlags::MS_PRIVATE, NONE).context("make / private")?;
+    mount(NONE, "/", NONE, MsFlags::MS_REC | MsFlags::MS_PRIVATE, NONE)
+        .context("make / private")?;
 
     mount(
         Some(&root),
